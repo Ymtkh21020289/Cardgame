@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>ソシャゲ</title>
+<style>
+body { background:#222; color:white; text-align:center; }
+
+/* 画面 */
+.screen { display:none; }
+.active { display:block; }
+
+/* カード */
+.card { padding:10px; margin:5px; border-radius:10px; display:inline-block; cursor:pointer; }
+.attack { background:#c0392b; }
+.heal { background:#27ae60; }
+.buff { background:#2980b9; }
+.special { background:#8e44ad; }
+
+/* キャラ */
+.char { border:2px solid white; margin:5px; padding:10px; display:inline-block; cursor:pointer; }
+.selected { border-color:yellow; }
+</style>
+</head>
+<body>
+
+<!-- ===== ガチャ ===== -->
+<div id="gachaScreen" class="screen active">
+<h2>ガチャ</h2>
+<button onclick="drawCharacterUI()">単発</button>
+<button onclick="draw10UI()">10連</button>
+
+<h3>所持キャラ</h3>
+<div id="ownedChars"></div>
+
+<h3>所持SC</h3>
+<div id="ownedSC"></div>
+
+<button onclick="goSelect()">編成へ</button>
+</div>
+
+<!-- ===== 編成 ===== -->
+<div id="selectScreen" class="screen">
+<h2>キャラ選択</h2>
+<div id="charSelect"></div>
+
+<h2>SC選択</h2>
+<div id="scSelect"></div>
+
+<button onclick="goGacha()">戻る</button>
+<button onclick="startGame()">戦闘開始</button>
+</div>
+
+<!-- ===== 戦闘 ===== -->
+<div id="battleScreen" class="screen">
+<div>HP: <span id="playerHP"></span></div>
+<div>敵HP: <span id="enemyHP"></span></div>
+<div>行動回数: <span id="actionCount"></span></div>
+
+<div id="hand"></div>
+
+<button onclick="nextTurn()">ターン終了</button>
+<button onclick="goSelect()">戻る</button>
+</div>
+
+<script src="main.js"></script>
+</body>
+</html>
