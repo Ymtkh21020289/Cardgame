@@ -1,23 +1,45 @@
+// ===== データ =====
 let cards = {};
 let characters = {};
 
-// ===== 所持 =====
+// ===== 所持（Set → 配列保存）=====
 let ownedChars = new Set();
-let ownedSC = new Set();
 
-// ===== 選択 =====
+// ===== 編成 =====
 let selectedChars = [];
-let selectedSC = [];
 
 // ===== 確率 =====
 const rates = { N:0.7, R:0.25, SR:0.05 };
 
-// ===== データ読み込み =====
+// ===== ロード =====
 async function loadData(){
   cards = await fetch("data/cards.json").then(r=>r.json());
   characters = await fetch("data/characters.json").then(r=>r.json());
+
+  loadSave(); // ← ここ重要
 }
 loadData();
+
+// ===== セーブ =====
+function saveGame(){
+  const data = {
+    ownedChars: [...ownedChars],
+    selectedChars: selectedChars
+  };
+  localStorage.setItem("myGameSave", JSON.stringify(data));
+}
+
+// ===== ロード =====
+function loadSave(){
+  const data = JSON.parse(localStorage.getItem("myGameSave"));
+
+  if(!data) return;
+
+  ownedChars = new Set(data.ownedChars || []);
+  selectedChars = data.selectedChars || [];
+
+  updateOwned();
+}
 
 // ===== 画面 =====
 function showScreen(id){
@@ -39,14 +61,15 @@ function drawCharacter(){
   return pool[Math.floor(Math.random()*pool.length)];
 }
 
-// 単発UI
 function drawCharacterUI(){
   const id=drawCharacter();
   ownedChars.add(id);
+
+  saveGame(); // ★追加
   updateOwned();
 }
 
-// 10連UI
+// ===== 10連 =====
 function draw10UI(){
   let results=[];
 
@@ -62,6 +85,8 @@ function draw10UI(){
     ownedChars.add(id);
   }
 
+  saveGame(); // ★追加
+
   alert("10連結果:\n"+results.map(id=>characters[id].name).join("\n"));
   updateOwned();
 }
@@ -76,7 +101,7 @@ function updateOwned(){
   });
 }
 
-// ===== 画面遷移 =====
+// ===== 編成 =====
 function goSelect(){
   renderSelect();
   showScreen("selectScreen");
@@ -86,7 +111,6 @@ function goGacha(){
   showScreen("gachaScreen");
 }
 
-// ===== 編成 =====
 function renderSelect(){
   charSelect.innerHTML="";
 
@@ -94,6 +118,11 @@ function renderSelect(){
     const div=document.createElement("div");
     div.className="char";
     div.textContent=characters[id].name;
+
+    // ★ 選択状態復元
+    if(selectedChars.includes(id)) {
+      div.classList.add("selected");
+    }
 
     div.onclick=()=>{
       if(selectedChars.includes(id)){
@@ -103,6 +132,8 @@ function renderSelect(){
         selectedChars.push(id);
         div.classList.add("selected");
       }
+
+      saveGame(); // ★追加
     };
 
     charSelect.appendChild(div);
