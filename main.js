@@ -150,6 +150,21 @@ class Battle{
     this.deck=deck.sort(()=>Math.random()-0.5);
     this.hand=[];
     this.actionCount=1;
+    this.buffs = [];
+    this.debuffs = [];
+    this.enemyStatus = [];
+  }
+
+  getAttackModifier() {
+    let buff = this.buffs
+      .filter(b => b.stat === "attack")
+      .reduce((sum, b) => sum + b.value, 0);
+
+    let debuff = this.debuffs
+      .filter(b => b.stat === "attack")
+      .reduce((sum, b) => sum + b.value, 0);
+
+    return buff + debuff;
   }
 
   draw(){
@@ -166,28 +181,89 @@ class Battle{
 
   useCard(i){
     if(this.actionCount<=0)return;
-
+  
     const id=this.hand.splice(i,1)[0];
     const c=cards[id];
-
-    if(c.type==="attack") this.enemyHP-=c.power;
-    if(c.type==="heal") this.playerHP+=c.power;
-    if(c.type==="special") this.actionCount++;
-
+  
+    // ===== 攻撃 =====
+    if(c.type==="attack"){
+      let dmg = c.power + this.getAttackModifier();
+      this.enemyHP -= dmg;
+  
+      // 毒付与
+      if(c.effect?.poison){
+        this.enemyStatus.push({
+          type: "poison",
+          value: c.effect.poison,
+          duration: c.effect.duration
+        });
+      }
+    }
+  
+    // ===== 回復 =====
+    if(c.type==="heal"){
+      this.playerHP += c.power;
+    }
+  
+    // ===== バフ =====
+    if(c.type==="buff"){
+      this.buffs.push({
+        stat: c.effect.stat,
+        value: c.power,
+        duration: c.duration
+      });
+    }
+  
+    // ===== デバフ =====
+    if(c.type==="debuff"){
+      this.debuffs.push({
+        stat: c.effect.stat,
+        value: c.power,
+        duration: c.duration
+      });
+    }
+  
+    // ===== 特殊 =====
+    if(c.type==="special"){
+      if(c.effect?.extraAction) this.actionCount++;
+    }
+  
     this.deck.push(id);
     this.actionCount--;
-
+  
     updateUI();
   }
-
+  
   enemyTurn(){
     this.playerHP-=this.enemyAttack;
   }
 
   endTurn(){
+
+    // ===== 手札戻す =====
     this.deck.push(...this.hand);
     this.hand=[];
+  
+    // ===== 毒ダメージ =====
+    this.enemyStatus.forEach(s=>{
+      if(s.type==="poison"){
+        this.enemyHP -= s.value;
+      }
+      s.duration--;
+    });
+  
+    this.enemyStatus = this.enemyStatus.filter(s=>s.duration>0);
+  
+    // ===== バフ減少 =====
+    this.buffs.forEach(b=>b.duration--);
+    this.buffs = this.buffs.filter(b=>b.duration>0);
+  
+    this.debuffs.forEach(b=>b.duration--);
+    this.debuffs = this.debuffs.filter(b=>b.duration>0);
+  
+    // ===== 敵攻撃 =====
     this.enemyTurn();
+  
     this.startTurn();
   }
 }
@@ -217,6 +293,8 @@ function updateUI(){
   playerHP.textContent=battle.playerHP;
   enemyHP.textContent=battle.enemyHP;
   actionCount.textContent=battle.actionCount;
+  const playerStatusDiv = document.getElementById("playerStatus");
+  const enemyStatusDiv = document.getElementById("enemyStatus");
 
   hand.innerHTML="";
   battle.hand.forEach((id,i)=>{
@@ -226,6 +304,30 @@ function updateUI(){
     div.textContent=c.name;
     div.onclick=()=>battle.useCard(i);
     hand.appendChild(div);
+  });
+
+  playerStatusDiv.innerHTML = "";
+  battle.buffs.forEach(b => {
+    const div = document.createElement("div");
+    div.className = "status-box buff";
+    div.textContent = `${b.stat}+${b.value} (${b.duration})`;
+    playerStatusDiv.appendChild(div);
+  });
+  
+  battle.debuffs.forEach(d => {
+    const div = document.createElement("div");
+    div.className = "status-box debuff";
+    div.textContent = `${d.stat}${d.value} (${d.duration})`;
+    playerStatusDiv.appendChild(div);
+  });
+  
+  // ===== 敵状態 =====
+  enemyStatusDiv.innerHTML = "";
+  battle.enemyStatus.forEach(s => {
+    const div = document.createElement("div");
+    div.className = "status-box poison";
+    div.textContent = `${s.type} ${s.value} (${s.duration})`;
+    enemyStatusDiv.appendChild(div);
   });
 }
 
