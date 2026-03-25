@@ -9,6 +9,17 @@ body { background:#222; color:white; text-align:center; }
 /* 画面 */
 .screen { display:none; }
 .active { display:block; }
+.status-box {
+  display: inline-block;
+  padding: 5px 10px;
+  margin: 3px;
+  border-radius: 5px;
+  font-size: 12px;
+}
+
+.buff { background: #3498db; }
+.debuff { background: #e74c3c; }
+.poison { background: #8e44ad; }
 
 /* カード */
 .card { padding:10px; margin:5px; border-radius:10px; display:inline-block; cursor:pointer; }
@@ -55,6 +66,15 @@ body { background:#222; color:white; text-align:center; }
 <div id="battleScreen" class="screen">
 <div>HP: <span id="playerHP"></span></div>
 <div>敵HP: <span id="enemyHP"></span></div>
+<div>
+  <h3>プレイヤー状態</h3>
+  <div id="playerStatus"></div>
+</div>
+
+<div>
+  <h3>敵状態</h3>
+  <div id="enemyStatus"></div>
+</div>
 <div>行動回数: <span id="actionCount"></span></div>
 
 <div id="hand"></div>
