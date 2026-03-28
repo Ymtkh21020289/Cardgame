@@ -1,5 +1,6 @@
 {
   "warrior": { "name": "剣士", "rarity": "N", "cards": ["card_001","card_002","card_002"] },
   "healer": { "name": "癒し手", "rarity": "R", "cards": ["card_001","card_005","card_005"] },
-  "buffer": { "name": "支援者", "rarity": "SR", "cards": ["card_030","card_031","card_010"] }
+  "buffer": { "name": "支援者", "rarity": "SR", "cards": ["card_030","card_031","card_010"] },
+  "spellcaster": { "name": "魔法使い", "rarity": "R", "cards": ["card_002","card_030","card_010"] }
 }
