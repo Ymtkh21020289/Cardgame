@@ -304,7 +304,20 @@ function updateUI(){
     const c=cards[id];
     const div=document.createElement("div");
     div.className="card "+c.type;
-    div.textContent=c.name;
+    
+    // カード名
+    const nameDiv = document.createElement("div");
+    nameDiv.className = "card-name";
+    nameDiv.textContent = c.name;
+    
+    // カード効果
+    const descDiv = document.createElement("div");
+    descDiv.className = "card-desc";
+    descDiv.innerHTML = getCardDescription(c);
+    
+    div.appendChild(nameDiv);
+    div.appendChild(descDiv);
+    
     div.onclick=()=>battle.useCard(i);
     hand.appendChild(div);
   });
@@ -338,3 +351,29 @@ function nextTurn(){ battle.endTurn(); }
 
 // DOM
 const ownedCharsDiv=document.getElementById("ownedChars");
+
+function getCardDescription(c) {
+  let desc = "";
+  
+  if (c.type === "attack") {
+    desc += `ダメージ: ${c.power}`;
+    if (c.effect?.poison) {
+      desc += `<br>毒付与: ${c.effect.poison} (${c.effect.duration}T)`;
+    }
+  } else if (c.type === "heal") {
+    desc += `回復: ${c.power}`;
+  } else if (c.type === "buff" || c.type === "debuff") {
+    const statName = c.effect.stat === "attack" ? "攻撃力" : c.effect.stat;
+    const sign = c.power > 0 ? "+" : "";
+    desc += `${statName}${sign}${c.power} (${c.duration}T)`;
+  } else if (c.type === "special") {
+    if (c.effect?.extraAction) desc += `行動回数+${c.effect.extraAction}`;
+  }
+
+  // 使い切り（除外）フラグの表示
+  if (c.exhaust) {
+    desc += `<br><span style="color:#f1c40f; font-size:0.9em;">※一度のみ</span>`;
+  }
+  
+  return desc;
+}
