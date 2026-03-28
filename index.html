@@ -75,19 +75,42 @@
 
   /* カードデザイン */
   .card { 
-    width: 100px;
-    height: 140px;
+    width: 120px; /* 文字が入るように少し広げました */
+    height: 160px; 
     padding: 10px; 
     margin: 10px; 
     border-radius: 10px; 
     display: inline-flex;
+    flex-direction: column; /* 縦並びに変更 */
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start; /* 上寄せ */
     font-weight: bold;
     cursor: pointer; 
     box-shadow: 0 5px 15px rgba(0,0,0,0.4);
     transition: transform 0.2s, box-shadow 0.2s;
     border: 2px solid rgba(255,255,255,0.2);
+    box-sizing: border-box;
+  }
+  .card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+  }
+
+  /* カード内のテキストレイアウト */
+  .card-name {
+    font-size: 16px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.5);
+    width: 100%;
+    padding-bottom: 5px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+  }
+  .card-desc {
+    font-size: 12px;
+    font-weight: normal;
+    text-align: center;
+    line-height: 1.5;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.8);
   }
   .card:hover {
     transform: translateY(-10px);
