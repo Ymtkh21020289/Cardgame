@@ -1,10 +1,10 @@
 {
   "card_001": { "name": "斬撃", "type": "attack", "power": 10 },
   "card_002": { "name": "強打", "type": "attack", "power": 20 },
-  "card_005": { "name": "ヒール", "type": "heal", "power": 15 },
+  "card_005": { "name": "ヒール", "type": "heal", "power": 15, "exhaust": true }, 
   "card_010": { "name": "強化", "type": "buff", "power": 10, "duration": 2, "effect": { "stat": "attack" } },
-  "card_014": { "name": "連続行動", "type": "special", "effect": { "extraAction": 1 }, "isSC": true },
-  "card_030": {"name": "毒撃","type": "attack","power": 5,"effect": { "poison": 5, "duration": 3 }},
-  "card_031": {"name": "攻撃強化","type": "buff","power": 10,"duration": 3,"effect": { "stat": "attack" }},
-  "card_032": {"name": "弱体化","type": "debuff","power": -5,"duration": 3,"effect": { "stat": "attack" }}
+  "card_014": { "name": "連続行動", "type": "special", "effect": { "extraAction": 1 }, "isSC": true, "exhaust": true },
+  "card_030": { "name": "毒撃", "type": "attack", "power": 5, "effect": { "poison": 5, "duration": 3 } },
+  "card_031": { "name": "攻撃強化", "type": "buff", "power": 10, "duration": 3, "effect": { "stat": "attack" } },
+  "card_032": { "name": "弱体化", "type": "debuff", "power": -5, "duration": 3, "effect": { "stat": "attack" } }
 }
