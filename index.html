@@ -2,85 +2,206 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>ソシャゲ</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>カードバトルゲーム</title>
 <style>
-body { background:#222; color:white; text-align:center; }
+  /* 全体のベース設定 */
+  body { 
+    background: linear-gradient(135deg, #1e1e1e, #2c3e50); 
+    color: #ecf0f1; 
+    font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+    text-align: center; 
+    margin: 0;
+    min-height: 100vh;
+  }
 
-/* 画面 */
-.screen { display:none; }
-.active { display:block; }
-.status-box {
-  display: inline-block;
-  padding: 5px 10px;
-  margin: 3px;
-  border-radius: 5px;
-  font-size: 12px;
-}
+  h2, h3 {
+    margin-bottom: 10px;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+  }
 
-.buff { background: #3498db; }
-.debuff { background: #e74c3c; }
-.poison { background: #8e44ad; }
+  /* 画面切り替え */
+  .screen { 
+    display: none; 
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  .active { display: block; }
 
-/* カード */
-.card { padding:10px; margin:5px; border-radius:10px; display:inline-block; cursor:pointer; }
-.attack { background:#c0392b; }
-.heal { background:#27ae60; }
-.buff { background:#2980b9; }
-.special { background:#8e44ad; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 
-/* キャラ */
-.char { border:2px solid white; margin:5px; padding:10px; display:inline-block; cursor:pointer; }
-.selected { border-color:yellow; }
+  /* ボタンのデザイン */
+  button {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    margin: 10px 5px;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    transition: all 0.2s ease;
+  }
+  button:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0,0,0,0.4);
+  }
+  button:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+
+  /* ステータスボックス（バフ・デバフなど） */
+  .status-box {
+    display: inline-block;
+    padding: 4px 10px;
+    margin: 3px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  .buff { background: #3498db; }
+  .debuff { background: #e74c3c; }
+  .poison { background: #8e44ad; }
+
+  /* カードデザイン */
+  .card { 
+    width: 100px;
+    height: 140px;
+    padding: 10px; 
+    margin: 10px; 
+    border-radius: 10px; 
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    cursor: pointer; 
+    box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 2px solid rgba(255,255,255,0.2);
+  }
+  .card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+  }
+  
+  /* カードの種類別カラー */
+  .attack { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+  .heal { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+  .buff { background: linear-gradient(135deg, #3498db, #2980b9); }
+  .debuff { background: linear-gradient(135deg, #f39c12, #e67e22); }
+  .special { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+
+  /* キャラクター選択画面 */
+  .char { 
+    border: 2px solid #7f8c8d; 
+    background: #34495e;
+    margin: 5px; 
+    padding: 15px 20px; 
+    border-radius: 8px;
+    display: inline-block; 
+    cursor: pointer; 
+    transition: all 0.2s;
+  }
+  .char:hover {
+    background: #3d566e;
+  }
+  .selected { 
+    border-color: #f1c40f; 
+    background: #d35400;
+    box-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
+  }
+
+  /* バトル画面のレイアウト */
+  .battle-header {
+    display: flex;
+    justify-content: space-around;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+  }
+  .hp-text {
+    font-size: 20px;
+    font-weight: bold;
+  }
+  .action-point {
+    font-size: 18px;
+    color: #f1c40f;
+    margin-bottom: 10px;
+  }
+  #hand {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    min-height: 180px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 20px 0;
+    margin-bottom: 20px;
+  }
 </style>
 </head>
 <body>
 
-<!-- ===== ガチャ ===== -->
 <div id="gachaScreen" class="screen active">
-<h2>ガチャ</h2>
-<button onclick="drawCharacterUI()">単発</button>
-<button onclick="draw10UI()">10連</button>
+  <h2>ガチャ</h2>
+  <button onclick="drawCharacterUI()">単発ガチャ</button>
+  <button onclick="draw10UI()">10連ガチャ</button>
 
-<h3>所持キャラ</h3>
-<div id="ownedChars"></div>
+  <hr style="border:1px solid #555; margin: 20px 0;">
 
-<h3>所持SC</h3>
-<div id="ownedSC"></div>
+  <h3>所持キャラクター</h3>
+  <div id="ownedChars"></div>
 
-<button onclick="goSelect()">編成へ</button>
+  <div id="ownedSC"></div>
+
+  <div style="margin-top: 30px;">
+    <button onclick="goSelect()" style="background: #e67e22;">編成へ進む</button>
+  </div>
 </div>
 
-<!-- ===== 編成 ===== -->
 <div id="selectScreen" class="screen">
-<h2>キャラ選択</h2>
-<div id="charSelect"></div>
+  <h2>パーティ編成 (4人選択)</h2>
+  <div id="charSelect"></div>
 
-<h2>SC選択</h2>
-<div id="scSelect"></div>
+  <div id="scSelect"></div>
 
-<button onclick="goGacha()">戻る</button>
-<button onclick="startGame()">戦闘開始</button>
+  <div style="margin-top: 30px;">
+    <button onclick="goGacha()" style="background: #7f8c8d;">ガチャに戻る</button>
+    <button onclick="startGame()" style="background: #e74c3c;">戦闘開始！</button>
+  </div>
 </div>
 
-<!-- ===== 戦闘 ===== -->
 <div id="battleScreen" class="screen">
-<div>HP: <span id="playerHP"></span></div>
-<div>敵HP: <span id="enemyHP"></span></div>
-<div>
-  <h3>プレイヤー状態</h3>
-  <div id="playerStatus"></div>
-</div>
+  
+  <div class="battle-header">
+    <div>
+      <div class="hp-text">あなた: <span id="playerHP"></span></div>
+      <div id="playerStatus"></div>
+    </div>
+    <div>
+      <div class="hp-text">敵: <span id="enemyHP"></span></div>
+      <div id="enemyStatus"></div>
+    </div>
+  </div>
 
-<div>
-  <h3>敵状態</h3>
-  <div id="enemyStatus"></div>
-</div>
-<div>行動回数: <span id="actionCount"></span></div>
+  <div class="action-point">残り行動回数: <span id="actionCount"></span></div>
 
-<div id="hand"></div>
+  <div id="hand"></div>
 
-<button onclick="nextTurn()">ターン終了</button>
-<button onclick="goSelect()">戻る</button>
+  <button onclick="nextTurn()" style="background: #f39c12;">ターン終了</button>
+  <button onclick="goSelect()" style="background: #7f8c8d;">撤退する</button>
+
 </div>
 
 <script src="main.js"></script>
