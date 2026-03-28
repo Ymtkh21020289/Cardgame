@@ -141,11 +141,15 @@ function renderSelect(){
 }
 
 // ===== バトル =====
-class Battle{
+class Battle {
   constructor(deck){
     this.playerHP=100;
     this.enemyHP=100;
     this.enemyAttack=10;
+
+    // ★追加: 被ダメ増加（永続）の管理変数
+    this.playerDamageTakenUp = 0; 
+    this.enemyDamageTakenUp = 0;
 
     this.deck=deck.sort(()=>Math.random()-0.5);
     this.hand=[];
@@ -156,58 +160,53 @@ class Battle{
   }
 
   getAttackModifier() {
-    // 省略（変更なし）
     let buff = this.buffs.filter(b => b.stat === "attack").reduce((sum, b) => sum + b.value, 0);
     let debuff = this.debuffs.filter(b => b.stat === "attack").reduce((sum, b) => sum + b.value, 0);
     return buff + debuff;
   }
 
   draw(){
-    // 省略（変更なし）
-    while(this.hand.length<3 && this.deck.length){
+    // ★修正: 手札の上限（3枚）の制限を外し、引けるだけ引くように変更
+    if(this.deck.length > 0){
       this.hand.push(this.deck.pop());
     }
   }
 
   startTurn(){
-    // 省略（変更なし）
     this.actionCount=1;
-    this.draw();
+    // ターン開始時は手札が3枚になるまで引く
+    while(this.hand.length < 3 && this.deck.length > 0){
+      this.draw();
+    }
     updateUI();
   }
 
-  // ★ 新規追加：勝敗判定処理
   checkWinLose() {
     if (this.enemyHP <= 0) {
-      this.enemyHP = 0; // マイナス表示を防ぐ
+      this.enemyHP = 0;
       updateUI();
-      setTimeout(() => {
-        alert("敵を倒した！あなたの勝利です！");
-        goSelect(); // リザルト画面や編成画面に戻す
-      }, 100);
-      return true; // 決着がついたことを返す
-    }
-    if (this.playerHP <= 0) {
-      this.playerHP = 0; // マイナス表示を防ぐ
-      updateUI();
-      setTimeout(() => {
-        alert("敗北しました……。");
-        goSelect();
-      }, 100);
+      setTimeout(() => { alert("敵を倒した！あなたの勝利です！"); goSelect(); }, 100);
       return true;
     }
-    return false; // まだ決着がついていない
+    if (this.playerHP <= 0) {
+      this.playerHP = 0;
+      updateUI();
+      setTimeout(() => { alert("敗北しました……。"); goSelect(); }, 100);
+      return true;
+    }
+    return false;
   }
 
   useCard(i){
-    if(this.actionCount<=0)return;
+    if(this.actionCount<=0) return;
   
     const id=this.hand.splice(i,1)[0];
     const c=cards[id];
   
     // ===== 攻撃 =====
     if(c.type==="attack"){
-      let dmg = c.power + this.getAttackModifier();
+      // ★修正: 敵の被ダメ増加（永続）を上乗せしてダメージを与える
+      let dmg = c.power + this.getAttackModifier() + this.enemyDamageTakenUp;
       this.enemyHP -= dmg;
   
       if(c.effect?.poison){
@@ -216,58 +215,64 @@ class Battle{
     }
   
     // ===== 回復 =====
-    if(c.type==="heal"){
-      this.playerHP += c.power;
-      // HPの上限を設ける場合はここで調整（例: if(this.playerHP > 100) this.playerHP = 100;）
-    }
+    if(c.type==="heal") this.playerHP += c.power;
   
     // ===== バフ / デバフ / 特殊 =====
     if(c.type==="buff") this.buffs.push({ stat: c.effect.stat, value: c.power, duration: c.duration });
     if(c.type==="debuff") this.debuffs.push({ stat: c.effect.stat, value: c.power, duration: c.duration });
-    if(c.type==="special"){
-      if(c.effect?.extraAction) this.actionCount++;
+    
+    // ===== 新効果の処理 =====
+    if(c.effect){
+      // 行動回数増加
+      if(c.effect.extraAction) this.actionCount += c.effect.extraAction;
+      
+      // カードドロー
+      if(c.effect.draw){
+        for(let j=0; j<c.effect.draw; j++) this.draw();
+      }
+
+      // 被ダメ増加（永続）
+      if(c.effect.damageTakenUp){
+        if(c.effect.damageTakenUp.target === "enemy") {
+          this.enemyDamageTakenUp += c.effect.damageTakenUp.value;
+        } else if(c.effect.damageTakenUp.target === "player") {
+          this.playerDamageTakenUp += c.effect.damageTakenUp.value;
+        }
+      }
     }
   
     if(!c.exhaust) this.deck.push(id);
     this.actionCount--;
   
     updateUI();
-
-    // ★ 修正：カード使用後に勝敗判定を行う
     this.checkWinLose();
   }
   
   enemyTurn(){
-    this.playerHP-=this.enemyAttack;
+    // ★修正: 自分の被ダメ増加（永続）が上乗せされてダメージを受ける
+    let dmg = this.enemyAttack + this.playerDamageTakenUp;
+    this.playerHP -= dmg;
   }
 
   endTurn(){
-    // ===== 手札戻す =====
     this.deck.push(...this.hand);
     this.hand=[];
   
-    // ===== 毒ダメージ =====
     this.enemyStatus.forEach(s=>{
-      if(s.type==="poison") this.enemyHP -= s.value;
+      if(s.type==="poison") this.enemyHP -= s.value; // 毒には被ダメ増加を乗せない仕様にしています
       s.duration--;
     });
     this.enemyStatus = this.enemyStatus.filter(s=>s.duration>0);
   
-    updateUI(); // 毒のダメージを画面に反映
-
-    // ★ 修正：毒ダメージで敵が倒れたか判定
+    updateUI();
     if(this.checkWinLose()) return;
   
-    // ===== バフ減少 =====
     this.buffs.forEach(b=>b.duration--);
     this.buffs = this.buffs.filter(b=>b.duration>0);
     this.debuffs.forEach(b=>b.duration--);
     this.debuffs = this.debuffs.filter(b=>b.duration>0);
   
-    // ===== 敵攻撃 =====
     this.enemyTurn();
-  
-    // ★ 修正：敵の攻撃で自分が倒れたか判定
     if(this.checkWinLose()) return;
   
     this.startTurn();
