@@ -156,27 +156,47 @@ class Battle{
   }
 
   getAttackModifier() {
-    let buff = this.buffs
-      .filter(b => b.stat === "attack")
-      .reduce((sum, b) => sum + b.value, 0);
-
-    let debuff = this.debuffs
-      .filter(b => b.stat === "attack")
-      .reduce((sum, b) => sum + b.value, 0);
-
+    // 省略（変更なし）
+    let buff = this.buffs.filter(b => b.stat === "attack").reduce((sum, b) => sum + b.value, 0);
+    let debuff = this.debuffs.filter(b => b.stat === "attack").reduce((sum, b) => sum + b.value, 0);
     return buff + debuff;
   }
 
   draw(){
+    // 省略（変更なし）
     while(this.hand.length<3 && this.deck.length){
       this.hand.push(this.deck.pop());
     }
   }
 
   startTurn(){
+    // 省略（変更なし）
     this.actionCount=1;
     this.draw();
     updateUI();
+  }
+
+  // ★ 新規追加：勝敗判定処理
+  checkWinLose() {
+    if (this.enemyHP <= 0) {
+      this.enemyHP = 0; // マイナス表示を防ぐ
+      updateUI();
+      setTimeout(() => {
+        alert("敵を倒した！あなたの勝利です！");
+        goSelect(); // リザルト画面や編成画面に戻す
+      }, 100);
+      return true; // 決着がついたことを返す
+    }
+    if (this.playerHP <= 0) {
+      this.playerHP = 0; // マイナス表示を防ぐ
+      updateUI();
+      setTimeout(() => {
+        alert("敗北しました……。");
+        goSelect();
+      }, 100);
+      return true;
+    }
+    return false; // まだ決着がついていない
   }
 
   useCard(i){
@@ -190,51 +210,31 @@ class Battle{
       let dmg = c.power + this.getAttackModifier();
       this.enemyHP -= dmg;
   
-      // 毒付与
       if(c.effect?.poison){
-        this.enemyStatus.push({
-          type: "poison",
-          value: c.effect.poison,
-          duration: c.effect.duration
-        });
+        this.enemyStatus.push({ type: "poison", value: c.effect.poison, duration: c.effect.duration });
       }
     }
   
     // ===== 回復 =====
     if(c.type==="heal"){
       this.playerHP += c.power;
+      // HPの上限を設ける場合はここで調整（例: if(this.playerHP > 100) this.playerHP = 100;）
     }
   
-    // ===== バフ =====
-    if(c.type==="buff"){
-      this.buffs.push({
-        stat: c.effect.stat,
-        value: c.power,
-        duration: c.duration
-      });
-    }
-  
-    // ===== デバフ =====
-    if(c.type==="debuff"){
-      this.debuffs.push({
-        stat: c.effect.stat,
-        value: c.power,
-        duration: c.duration
-      });
-    }
-  
-    // ===== 特殊 =====
+    // ===== バフ / デバフ / 特殊 =====
+    if(c.type==="buff") this.buffs.push({ stat: c.effect.stat, value: c.power, duration: c.duration });
+    if(c.type==="debuff") this.debuffs.push({ stat: c.effect.stat, value: c.power, duration: c.duration });
     if(c.type==="special"){
       if(c.effect?.extraAction) this.actionCount++;
     }
   
-    if(!c.exhaust){
-      this.deck.push(id);
-    }
-    
+    if(!c.exhaust) this.deck.push(id);
     this.actionCount--;
   
     updateUI();
+
+    // ★ 修正：カード使用後に勝敗判定を行う
+    this.checkWinLose();
   }
   
   enemyTurn(){
@@ -242,35 +242,37 @@ class Battle{
   }
 
   endTurn(){
-
     // ===== 手札戻す =====
     this.deck.push(...this.hand);
     this.hand=[];
   
     // ===== 毒ダメージ =====
     this.enemyStatus.forEach(s=>{
-      if(s.type==="poison"){
-        this.enemyHP -= s.value;
-      }
+      if(s.type==="poison") this.enemyHP -= s.value;
       s.duration--;
     });
-  
     this.enemyStatus = this.enemyStatus.filter(s=>s.duration>0);
+  
+    updateUI(); // 毒のダメージを画面に反映
+
+    // ★ 修正：毒ダメージで敵が倒れたか判定
+    if(this.checkWinLose()) return;
   
     // ===== バフ減少 =====
     this.buffs.forEach(b=>b.duration--);
     this.buffs = this.buffs.filter(b=>b.duration>0);
-  
     this.debuffs.forEach(b=>b.duration--);
     this.debuffs = this.debuffs.filter(b=>b.duration>0);
   
     // ===== 敵攻撃 =====
     this.enemyTurn();
   
+    // ★ 修正：敵の攻撃で自分が倒れたか判定
+    if(this.checkWinLose()) return;
+  
     this.startTurn();
   }
 }
-
 let battle;
 
 // ===== 開始 =====
