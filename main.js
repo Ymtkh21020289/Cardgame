@@ -228,7 +228,10 @@ class Battle{
       if(c.effect?.extraAction) this.actionCount++;
     }
   
-    this.deck.push(id);
+    if(!c.exhaust){
+      this.deck.push(id);
+    }
+    
     this.actionCount--;
   
     updateUI();
