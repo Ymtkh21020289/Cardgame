@@ -11,5 +11,5 @@
   "card_030": { "name": "毒撃", "type": "attack", "power": 5, "effect": { "poison": 5, "duration": 3 } },
   "card_031": { "name": "攻撃強化", "type": "buff", "power": 10, "duration": 3, "effect": { "stat": "attack" } },
   "card_032": { "name": "弱体化", "type": "debuff", "power": -5, "duration": 3, "effect": { "stat": "attack" } },
-  "card_050": { "name": "戦術看破", "type": "special", "effect": { "damageTakenUp": { "target": "enemy", "value": 1 }, "draw": 1, "extraAction": 1 } }
+  "card_050": { "name": "戦術看破", "type": "special", "effect": { "damageTakenUp": { "target": "player", "value": 1 }, "draw": 1, "extraAction": 1 } }
 }
