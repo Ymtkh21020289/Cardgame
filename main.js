@@ -4,9 +4,11 @@ let characters = {};
 
 // ===== 所持（Set → 配列保存）=====
 let ownedChars = new Set();
+let ownedSC = new Set(); // ★追加: SCの所持状態
 
 // ===== 編成 =====
 let selectedChars = [];
+let selectedSC = []; // ★追加: (将来のSC編成用)
 
 // ===== 確率 =====
 const rates = { N:0.7, R:0.25, SR:0.05 };
@@ -24,7 +26,9 @@ loadData();
 function saveGame(){
   const data = {
     ownedChars: [...ownedChars],
-    selectedChars: selectedChars
+    selectedChars: selectedChars,
+    ownedSC: [...ownedSC],     // ★追加
+    selectedSC: selectedSC     // ★追加
   };
   localStorage.setItem("myGameSave", JSON.stringify(data));
 }
@@ -37,6 +41,8 @@ function loadSave(){
 
   ownedChars = new Set(data.ownedChars || []);
   selectedChars = data.selectedChars || [];
+  ownedSC = new Set(data.ownedSC || []); // ★追加
+  selectedSC = data.selectedSC || [];    // ★追加
 
   updateOwned();
 }
@@ -47,58 +53,103 @@ function showScreen(id){
   document.getElementById(id).classList.add("active");
 }
 
-// ===== ガチャ =====
-function getRarity(){
-  const r=Math.random();
-  if(r<rates.SR)return"SR";
-  if(r<rates.SR+rates.R)return"R";
-  return"N";
-}
+// ===== ガチャの内部処理 =====
+function drawGachaItem(forceSR = false) {
+  let rarity = forceSR ? "SR" : getRarity();
+  
+  // 該当レアリティのキャラクター候補
+  const charCandidates = Object.keys(characters).filter(k => characters[k].rarity === rarity);
+  
+  // 該当レアリティのSC候補
+  const scCandidates = Object.keys(cards).filter(k => cards[k].isSC && cards[k].rarity === rarity);
+  
+  // 候補をすべて混ぜる
+  const allCandidates = [];
+  charCandidates.forEach(id => allCandidates.push({ type: "char", id: id }));
+  scCandidates.forEach(id => allCandidates.push({ type: "sc", id: id }));
 
-function drawCharacter(){
-  const rarity=getRarity();
-  const pool=Object.keys(characters).filter(id=>characters[id].rarity===rarity);
-  return pool[Math.floor(Math.random()*pool.length)];
-}
-
-function drawCharacterUI(){
-  const id=drawCharacter();
-  ownedChars.add(id);
-
-  saveGame(); // ★追加
-  updateOwned();
-}
-
-// ===== 10連 =====
-function draw10UI(){
-  let results=[];
-
-  for(let i=0;i<10;i++){
-    let id=drawCharacter();
-
-    if(i===9 && !results.some(r=>characters[r].rarity==="SR")){
-      const srPool=Object.keys(characters).filter(id=>characters[id].rarity==="SR");
-      id=srPool[Math.floor(Math.random()*srPool.length)];
-    }
-
-    results.push(id);
-    ownedChars.add(id);
+  // もし該当レアリティが空なら、安全のためにNキャラを返す
+  if (allCandidates.length === 0) {
+    const fallback = Object.keys(characters)[0];
+    return { type: "char", id: fallback, name: characters[fallback].name, rarity: "N" };
   }
 
-  saveGame(); // ★追加
+  // ランダムに1つ選ぶ
+  const picked = allCandidates[Math.floor(Math.random() * allCandidates.length)];
 
-  alert("10連結果:\n"+results.map(id=>characters[id].name).join("\n"));
+  if (picked.type === "char") {
+    ownedChars.add(picked.id);
+    return { type: "char", id: picked.id, name: characters[picked.id].name, rarity: rarity };
+  } else {
+    ownedSC.add(picked.id);
+    return { type: "sc", id: picked.id, name: cards[picked.id].name, rarity: rarity };
+  }
+}
+
+// ===== ガチャUI処理 =====
+function drawCharacterUI() {
+  const result = drawGachaItem();
+  const typeText = result.type === "char" ? "キャラ" : "SC";
+  alert(`【単発ガチャ】\n[${result.rarity}] ${result.name} (${typeText}) をゲットしました！`);
   updateOwned();
 }
 
-// ===== 所持表示 =====
-function updateOwned(){
-  ownedCharsDiv.innerHTML="";
-  ownedChars.forEach(id=>{
-    const div=document.createElement("div");
-    div.textContent=characters[id].name;
-    ownedCharsDiv.appendChild(div);
-  });
+function draw10UI() {
+  let resultsText = "【10連ガチャ結果】\n";
+  let hasSR = false;
+
+  for (let i = 0; i < 9; i++) {
+    const result = drawGachaItem();
+    if (result.rarity === "SR") hasSR = true;
+    const typeText = result.type === "char" ? "キャラ" : "SC";
+    resultsText += `[${result.rarity}] ${result.name} (${typeText})\n`;
+  }
+
+  // 10連目はSR確定枠の処理（今までSRが出ていなければ強制的にSR）
+  const lastResult = drawGachaItem(!hasSR);
+  const lastTypeText = lastResult.type === "char" ? "キャラ" : "SC";
+  resultsText += `[${lastResult.rarity}] ${lastResult.name} (${lastTypeText})\n`;
+
+  alert(resultsText);
+  updateOwned();
+}
+
+// ===== 所持一覧の表示更新 =====
+function updateOwned() {
+  const charsDiv = document.getElementById("ownedChars");
+  const scDiv = document.getElementById("ownedSC");
+  
+  if (charsDiv) {
+    charsDiv.innerHTML = "";
+    ownedChars.forEach(id => {
+      const char = characters[id];
+      if(!char) return;
+      const div = document.createElement("div");
+      div.className = "char";
+      div.textContent = `[${char.rarity}] ${char.name}`;
+      charsDiv.appendChild(div);
+    });
+  }
+
+  // ★追加: SCの表示
+  if (scDiv) {
+    scDiv.innerHTML = "";
+    ownedSC.forEach(id => {
+      const c = cards[id];
+      if(!c) return;
+      const div = document.createElement("div");
+      div.className = "card " + c.type;
+      
+      const nameDiv = document.createElement("div");
+      nameDiv.className = "card-name";
+      nameDiv.textContent = `[${c.rarity}] ${c.name}`;
+      
+      div.appendChild(nameDiv);
+      scDiv.appendChild(div);
+    });
+  }
+
+  saveGame();
 }
 
 // ===== 編成 =====
