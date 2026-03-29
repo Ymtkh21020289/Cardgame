@@ -13,6 +13,14 @@ let selectedSC = []; // ★追加: (将来のSC編成用)
 // ===== 確率 =====
 const rates = { N:0.7, R:0.25, SR:0.05 };
 
+// ===== レアリティの抽選 =====
+function getRarity() {
+  const r = Math.random();
+  if (r < rates.SR) return "SR";
+  if (r < rates.SR + rates.R) return "R";
+  return "N";
+}
+
 // ===== ロード =====
 async function loadData(){
   cards = await fetch("data/cards.json").then(r=>r.json());
