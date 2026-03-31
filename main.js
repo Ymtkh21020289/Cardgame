@@ -160,43 +160,77 @@ function updateOwned() {
   saveGame();
 }
 
-// ===== 編成 =====
+// ===== 画面遷移 =====
 function goSelect(){
-  renderSelect();
   showScreen("selectScreen");
+  renderSelect(); // 画面遷移時に必ず最新の所持状況を描画する
 }
 
 function goGacha(){
   showScreen("gachaScreen");
 }
 
+// ===== 編成画面の描画 =====
 function renderSelect(){
-  charSelect.innerHTML="";
-
-  ownedChars.forEach(id=>{
-    const div=document.createElement("div");
-    div.className="char";
-    div.textContent=characters[id].name;
-
-    // ★ 選択状態復元
-    if(selectedChars.includes(id)) {
-      div.classList.add("selected");
-    }
-
-    div.onclick=()=>{
-      if(selectedChars.includes(id)){
-        selectedChars=selectedChars.filter(x=>x!==id);
-        div.classList.remove("selected");
-      }else if(selectedChars.length<4){
-        selectedChars.push(id);
-        div.classList.add("selected");
+  const charSelect = document.getElementById("charSelect");
+  charSelect.innerHTML = "";
+  
+  // 1. キャラクターの描画
+  ownedChars.forEach(id => {
+    const char = characters[id];
+    if(!char) return;
+    const div = document.createElement("div");
+    div.className = "char " + (selectedChars.includes(id) ? "selected" : "");
+    div.textContent = `[${char.rarity}] ${char.name}`;
+    
+    div.onclick = () => {
+      if (selectedChars.includes(id)) {
+        selectedChars = selectedChars.filter(x => x !== id);
+      } else {
+        if (selectedChars.length < 4) selectedChars.push(id);
+        else alert("キャラクターは4人まで編成可能です。");
       }
-
-      saveGame(); // ★追加
+      saveGame();
+      renderSelect();
     };
-
     charSelect.appendChild(div);
   });
+
+  // 2. SC（サポートカード）の描画
+  const scSelect = document.getElementById("scSelect");
+  if(scSelect){
+    scSelect.innerHTML = "<p style='width:100%; text-align:center;'>最大2枚まで選択可能</p>";
+    
+    ownedSC.forEach(id => {
+      const c = cards[id];
+      if(!c) return;
+      const div = document.createElement("div");
+      div.className = "card " + c.type + (selectedSC.includes(id) ? " sc-selected" : "");
+      
+      const nameDiv = document.createElement("div");
+      nameDiv.className = "card-name";
+      nameDiv.textContent = `[${c.rarity || "N"}] ${c.name}`;
+      
+      const descDiv = document.createElement("div");
+      descDiv.className = "card-desc";
+      descDiv.innerHTML = getCardDescription(c);
+      
+      div.appendChild(nameDiv);
+      div.appendChild(descDiv);
+      
+      div.onclick = () => {
+        if (selectedSC.includes(id)) {
+          selectedSC = selectedSC.filter(x => x !== id);
+        } else {
+          if (selectedSC.length < 2) selectedSC.push(id);
+          else alert("サポートカードは2枚まで編成可能です。");
+        }
+        saveGame();
+        renderSelect();
+      };
+      scSelect.appendChild(div);
+    });
+  }
 }
 
 // ===== バトル =====
@@ -339,20 +373,29 @@ class Battle {
 }
 let battle;
 
-// ===== 開始 =====
+// ===== 戦闘開始 =====
 function startGame(){
-  if(selectedChars.length!==4){
-    alert("4人選んでください");
+  if(selectedChars.length < 4){
+    alert("キャラクターを4人選択してください！");
     return;
   }
-
-  let deck=[];
-  selectedChars.forEach(id=>{
-    deck.push(...characters[id].cards);
+  
+  let deck = [];
+  
+  // 1. 選択したキャラクターのカードをデッキに追加
+  selectedChars.forEach(id => {
+    const char = characters[id];
+    if(char && char.cards){
+      deck.push(...char.cards);
+    }
   });
-
-  battle=new Battle(deck);
-
+  
+  // 2. 選択したSCをデッキに追加
+  selectedSC.forEach(id => {
+    deck.push(id);
+  });
+  
+  battle = new Battle(deck);
   showScreen("battleScreen");
   battle.startTurn();
 }
