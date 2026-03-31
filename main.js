@@ -298,7 +298,6 @@ class Battle {
   
     // ===== 攻撃 =====
     if(c.type==="attack"){
-      // ★修正: 敵の被ダメ増加（永続）を上乗せしてダメージを与える
       let dmg = c.power + this.getAttackModifier() + this.enemyDamageTakenUp;
       this.enemyHP -= dmg;
   
@@ -316,15 +315,10 @@ class Battle {
     
     // ===== 新効果の処理 =====
     if(c.effect){
-      // 行動回数増加
       if(c.effect.extraAction) this.actionCount += c.effect.extraAction;
-      
-      // カードドロー
       if(c.effect.draw){
         for(let j=0; j<c.effect.draw; j++) this.draw();
       }
-
-      // 被ダメ増加（永続）
       if(c.effect.damageTakenUp){
         if(c.effect.damageTakenUp.target === "enemy") {
           this.enemyDamageTakenUp += c.effect.damageTakenUp.value;
@@ -334,7 +328,9 @@ class Battle {
       }
     }
   
-    if(!c.exhaust) this.deck.push(id);
+    // ★修正: 使ったカードは山札の「一番上」ではなく「底」に戻す
+    if(!c.exhaust) this.deck.unshift(id);
+    
     this.actionCount--;
   
     updateUI();
@@ -342,17 +338,17 @@ class Battle {
   }
   
   enemyTurn(){
-    // ★修正: 自分の被ダメ増加（永続）が上乗せされてダメージを受ける
     let dmg = this.enemyAttack + this.playerDamageTakenUp;
     this.playerHP -= dmg;
   }
 
   endTurn(){
-    this.deck.push(...this.hand);
+    // ★修正: ターン終了時に残った手札も山札の「底」に戻す
+    this.deck.unshift(...this.hand);
     this.hand=[];
   
     this.enemyStatus.forEach(s=>{
-      if(s.type==="poison") this.enemyHP -= s.value; // 毒には被ダメ増加を乗せない仕様にしています
+      if(s.type==="poison") this.enemyHP -= s.value;
       s.duration--;
     });
     this.enemyStatus = this.enemyStatus.filter(s=>s.duration>0);
