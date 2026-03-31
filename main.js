@@ -401,59 +401,90 @@ function startGame(){
 }
 
 // ===== UI =====
+// ===== UI =====
 function updateUI(){
-  playerHP.textContent=battle.playerHP;
-  enemyHP.textContent=battle.enemyHP;
-  actionCount.textContent=battle.actionCount;
+  const playerHP = document.getElementById("playerHP");
+  const enemyHP = document.getElementById("enemyHP");
+  const actionCount = document.getElementById("actionCount");
+  const hand = document.getElementById("hand");
+  
+  if(playerHP) playerHP.textContent=battle.playerHP;
+  if(enemyHP) enemyHP.textContent=battle.enemyHP;
+  if(actionCount) actionCount.textContent=battle.actionCount;
+  
   const playerStatusDiv = document.getElementById("playerStatus");
   const enemyStatusDiv = document.getElementById("enemyStatus");
 
-  hand.innerHTML="";
-  battle.hand.forEach((id,i)=>{
-    const c=cards[id];
-    const div=document.createElement("div");
-    div.className="card "+c.type;
-    
-    // カード名
-    const nameDiv = document.createElement("div");
-    nameDiv.className = "card-name";
-    nameDiv.textContent = c.name;
-    
-    // カード効果
-    const descDiv = document.createElement("div");
-    descDiv.className = "card-desc";
-    descDiv.innerHTML = getCardDescription(c);
-    
-    div.appendChild(nameDiv);
-    div.appendChild(descDiv);
-    
-    div.onclick=()=>battle.useCard(i);
-    hand.appendChild(div);
-  });
+  // 手札の描画
+  if(hand){
+    hand.innerHTML="";
+    battle.hand.forEach((id,i)=>{
+      const c=cards[id];
+      const div=document.createElement("div");
+      div.className="card "+c.type;
+      
+      const nameDiv = document.createElement("div");
+      nameDiv.className = "card-name";
+      nameDiv.textContent = c.name;
+      
+      const descDiv = document.createElement("div");
+      descDiv.className = "card-desc";
+      descDiv.innerHTML = getCardDescription(c); // 前回の説明文生成関数を使用
+      
+      div.appendChild(nameDiv);
+      div.appendChild(descDiv);
+      
+      div.onclick=()=>battle.useCard(i);
+      hand.appendChild(div);
+    });
+  }
 
-  playerStatusDiv.innerHTML = "";
-  battle.buffs.forEach(b => {
-    const div = document.createElement("div");
-    div.className = "status-box buff";
-    div.textContent = `${b.stat}+${b.value} (${b.duration})`;
-    playerStatusDiv.appendChild(div);
-  });
+  // ===== プレイヤーステータスの描画 =====
+  if(playerStatusDiv){
+    playerStatusDiv.innerHTML = "";
+    
+    battle.buffs.forEach(b => {
+      const div = document.createElement("div");
+      div.className = "status-box buff";
+      div.textContent = `${b.stat}+${b.value} (${b.duration}T)`;
+      playerStatusDiv.appendChild(div);
+    });
+    
+    battle.debuffs.forEach(d => {
+      const div = document.createElement("div");
+      div.className = "status-box debuff";
+      div.textContent = `${d.stat}${d.value} (${d.duration}T)`;
+      playerStatusDiv.appendChild(div);
+    });
+    
+    // ★追加: 自身の被ダメ増加を状態異常として表示
+    if (battle.playerDamageTakenUp > 0) {
+      const div = document.createElement("div");
+      div.className = "status-box damage-up";
+      div.textContent = `被ダメ増加+${battle.playerDamageTakenUp} (永続)`;
+      playerStatusDiv.appendChild(div);
+    }
+  }
   
-  battle.debuffs.forEach(d => {
-    const div = document.createElement("div");
-    div.className = "status-box debuff";
-    div.textContent = `${d.stat}${d.value} (${d.duration})`;
-    playerStatusDiv.appendChild(div);
-  });
-  
-  // ===== 敵状態 =====
-  enemyStatusDiv.innerHTML = "";
-  battle.enemyStatus.forEach(s => {
-    const div = document.createElement("div");
-    div.className = "status-box poison";
-    div.textContent = `${s.type} ${s.value} (${s.duration})`;
-    enemyStatusDiv.appendChild(div);
-  });
+  // ===== 敵ステータスの描画 =====
+  if(enemyStatusDiv){
+    enemyStatusDiv.innerHTML = "";
+    
+    battle.enemyStatus.forEach(s => {
+      const div = document.createElement("div");
+      div.className = "status-box poison";
+      div.textContent = `${s.type} ${s.value} (${s.duration}T)`;
+      enemyStatusDiv.appendChild(div);
+    });
+
+    // ★追加: 敵の被ダメ増加を状態異常として表示
+    if (battle.enemyDamageTakenUp > 0) {
+      const div = document.createElement("div");
+      div.className = "status-box damage-up";
+      div.textContent = `被ダメ増加+${battle.enemyDamageTakenUp} (永続)`;
+      enemyStatusDiv.appendChild(div);
+    }
+  }
 }
 
 function nextTurn(){ battle.endTurn(); }
