@@ -240,11 +240,11 @@ class Battle {
     this.enemyHP=100;
     this.enemyAttack=10;
 
-    // ★追加: 被ダメ増加（永続）の管理変数
-    this.playerDamageTakenUp = 0; 
+    this.playerDamageTakenUp = 0;
     this.enemyDamageTakenUp = 0;
 
     this.deck=deck.sort(()=>Math.random()-0.5);
+    this.discardPile = []; // ★追加: 捨て札
     this.hand=[];
     this.actionCount=1;
     this.buffs = [];
@@ -259,16 +259,20 @@ class Battle {
   }
 
   draw(){
-    // ★修正: 手札の上限（3枚）の制限を外し、引けるだけ引くように変更
-    if(this.deck.length > 0){
-      this.hand.push(this.deck.pop());
+    // ★追加: 山札が空の場合、捨て札をシャッフルして山札にする
+    if(this.deck.length === 0){
+      if(this.discardPile.length === 0) return; // 捨て札も無い場合は引けない
+      this.deck = this.discardPile.sort(() => Math.random() - 0.5);
+      this.discardPile = [];
     }
+    this.hand.push(this.deck.pop());
   }
 
   startTurn(){
     this.actionCount=1;
-    // ターン開始時は手札が3枚になるまで引く
-    while(this.hand.length < 3 && this.deck.length > 0){
+    while(this.hand.length < 3){
+      // ★追加: デッキと捨て札が両方空になった場合の無限ループ防止
+      if(this.deck.length === 0 && this.discardPile.length === 0) break;
       this.draw();
     }
     updateUI();
@@ -328,8 +332,8 @@ class Battle {
       }
     }
   
-    // ★修正: 使ったカードは山札の「一番上」ではなく「底」に戻す
-    if(!c.exhaust) this.deck.unshift(id);
+    // ★修正: 使ったカードは「捨て札」へ送る（使い切りでなければ）
+    if(!c.exhaust) this.discardPile.push(id);
     
     this.actionCount--;
   
@@ -343,8 +347,8 @@ class Battle {
   }
 
   endTurn(){
-    // ★修正: ターン終了時に残った手札も山札の「底」に戻す
-    this.deck.unshift(...this.hand);
+    // ★修正: ターン終了時に残った手札も「捨て札」へ送る
+    this.discardPile.push(...this.hand);
     this.hand=[];
   
     this.enemyStatus.forEach(s=>{
