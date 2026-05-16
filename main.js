@@ -97,29 +97,48 @@ function drawGachaItem(forceSR = false) {
 // ===== ガチャUI処理 =====
 function drawCharacterUI() {
   const result = drawGachaItem();
-  const typeText = result.type === "char" ? "キャラ" : "SC";
-  alert(`【単発ガチャ】\n[${result.rarity}] ${result.name} (${typeText}) をゲットしました！`);
+  renderGachaResults([result], "✨ 単発ガチャ結果 ✨");
   updateOwned();
 }
 
 function draw10UI() {
-  let resultsText = "【10連ガチャ結果】\n";
+  const results = [];
   let hasSR = false;
 
   for (let i = 0; i < 9; i++) {
     const result = drawGachaItem();
     if (result.rarity === "SR") hasSR = true;
-    const typeText = result.type === "char" ? "キャラ" : "SC";
-    resultsText += `[${result.rarity}] ${result.name} (${typeText})\n`;
+    results.push(result);
   }
 
-  // 10連目はSR確定枠の処理（今までSRが出ていなければ強制的にSR）
   const lastResult = drawGachaItem(!hasSR);
-  const lastTypeText = lastResult.type === "char" ? "キャラ" : "SC";
-  resultsText += `[${lastResult.rarity}] ${lastResult.name} (${lastTypeText})\n`;
+  results.push(lastResult);
 
-  alert(resultsText);
+  renderGachaResults(results, "🌈 10連ガチャ結果 🌈");
   updateOwned();
+}
+
+function renderGachaResults(results, title) {
+  const container = document.getElementById("gachaResults");
+  if (!container) return;
+
+  container.innerHTML = "";
+  results.forEach((result, index) => {
+    const typeText = result.type === "char" ? "キャラ" : "SC";
+    const div = document.createElement("div");
+    div.className = `gacha-item rarity-${result.rarity}`;
+    div.style.animationDelay = `${index * 0.06}s`;
+    div.innerHTML = `
+      <div>[${result.rarity}] ${typeText}</div>
+      <div class="sparkle"></div>
+      <div class="gacha-item-name">${result.name}</div>
+      <div class="gacha-item-meta">${result.rarity === "SR" ? "★超激レア！" : result.rarity === "R" ? "☆レア" : "・ノーマル"}</div>
+    `;
+    container.appendChild(div);
+  });
+
+  const titleEl = document.querySelector(".gacha-title");
+  if (titleEl && title) titleEl.textContent = title;
 }
 
 // ===== 所持一覧の表示更新 =====
